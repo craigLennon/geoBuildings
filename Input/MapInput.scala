@@ -1,5 +1,4 @@
 package Input
-
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.io.File;
@@ -75,7 +74,7 @@ import org.opengis.feature.simple.SimpleFeatureType;
 /**
  * @author cLennon
  */
-class MapPresentation {
+class MapInput {
       private val sf = CommonFactoryFinder.getStyleFactory();
       private val ff = CommonFactoryFinder.getFilterFactory2();
       val frame= new JMapFrame 
@@ -295,18 +294,41 @@ class MapPresentation {
 //        )
 //        val cur=new curse
         //cur.onMouseClicked(ev)
+        import javax.swing.{ButtonGroup,JRadioButtonMenuItem,AbstractButton,JToolBar,JButton,JDialog }
         frame.setSize(800, 600);
         frame.enableStatusBar(true);
         frame.enableTool(JMapFrame.Tool.POINTER , JMapFrame.Tool.ZOOM, JMapFrame.Tool.PAN, JMapFrame.Tool.RESET);
         frame.enableToolBar(true);
+        val toolbar: JToolBar=frame.getToolBar
+        val btnC:JButton = new JButton("Calculate")
+        toolbar.addSeparator();
+        toolbar.add(btnC)
+        btnC.addActionListener(new ActionListener(){
+                  def actionPerformed(e:ActionEvent){
+                  println("calculating")
+//        val d: JDialog = new JDialog(frame, "Calculating", true);
+//        d.setLocationRelativeTo(frame);
+//        d.setVisible(true);
+  }
+})
+      val btnS:JButton = new JButton("Save Input")
+        toolbar.addSeparator();
+        toolbar.add(btnS)
+        btnS.addActionListener(new ActionListener(){
+                  def actionPerformed(e:ActionEvent){
+                  println("saved")
+
+  }
+})       
+        
         frame.enableLayerTable(true)
         val menuBar:JMenuBar = new JMenuBar();
         frame.setJMenuBar(menuBar);
-                val typeMenu:JMenu = new JMenu("Observation Type")
+        val typeMenu:JMenu = new JMenu("Observation Type")
         
 //a group of radio button menu items
         var obsType="none"
-        import javax.swing.{ButtonGroup,JRadioButtonMenuItem,AbstractButton }
+        
         val group:ButtonGroup = new ButtonGroup();
         val rbMenuItem1 = new JRadioButtonMenuItem("Wall");
             rbMenuItem1.setSelected(true);
@@ -334,12 +356,8 @@ class MapPresentation {
         rbMenuItem2.addActionListener(sliceActionListener)
         rbMenuItem3.addActionListener(sliceActionListener)
         
-        
-        
-        
-        
         val menu:JMenu = new JMenu("Raster");
-        
+        menuBar.add(menu);
         
         menu.add( new SafeAction("Grayscale display") {
             def action(e:ActionEvent){
@@ -360,10 +378,10 @@ class MapPresentation {
            }
         })
 
-        
+            
  
         
-        menuBar.add(menu);
+        
         menuBar.add(typeMenu)
         
         
@@ -371,9 +389,6 @@ class MapPresentation {
         // Finally display the map frame.
         // When it is closed the app will exit.
         frame.setVisible(true);
-        
-      def getShapeFileName  
-        
         
       def  createGreyscaleStyle():Style= {
         var cov:GridCoverage2D = null

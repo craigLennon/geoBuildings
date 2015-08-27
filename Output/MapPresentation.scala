@@ -279,33 +279,23 @@ class MapPresentation {
               }
               }
         )
-        /////building simple features
-        //you are here trying to build points and lines from input
-        //////////////////////////
-        
-        //insert button finish.  When pressed write to file then estimate
-        
-        
 
-        
-        
-//        frame.addComponentListener(new ComponentListener(){}
-//              onMouseClicked    
-//        )
-//        val cur=new curse
-        //cur.onMouseClicked(ev)
+        import javax.swing.{ButtonGroup,JRadioButtonMenuItem,AbstractButton,JToolBar,JButton }
         frame.setSize(800, 600);
         frame.enableStatusBar(true);
         frame.enableTool(JMapFrame.Tool.POINTER , JMapFrame.Tool.ZOOM, JMapFrame.Tool.PAN, JMapFrame.Tool.RESET);
         frame.enableToolBar(true);
+
+        
+        
         frame.enableLayerTable(true)
         val menuBar:JMenuBar = new JMenuBar();
         frame.setJMenuBar(menuBar);
-                val typeMenu:JMenu = new JMenu("Observation Type")
+        val typeMenu:JMenu = new JMenu("Observation Type")
         
 //a group of radio button menu items
         var obsType="none"
-        import javax.swing.{ButtonGroup,JRadioButtonMenuItem,AbstractButton }
+        
         val group:ButtonGroup = new ButtonGroup();
         val rbMenuItem1 = new JRadioButtonMenuItem("Wall");
             rbMenuItem1.setSelected(true);
