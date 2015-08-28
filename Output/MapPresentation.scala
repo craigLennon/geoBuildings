@@ -91,10 +91,10 @@ class MapPresentation {
         list.add((new Parameter("image", classOf[File], "Image",
                 "GeoTiff or World+Image to display as basemap",
                 new KVP( Parameter.EXT, "tif", Parameter.EXT, "jpg"))))
-      //  list.add(new Parameter("shape1", classOf[File], "Shapefile",
-       //         "Shapefile contents to display", new KVP(Parameter.EXT, "shp"))) 
-     //   list.add(new Parameter("shape2", classOf[File], "Shapefile",
-      //          "Shapefile contents to display", new KVP(Parameter.EXT, "shp"))) 
+        list.add(new Parameter("shape1", classOf[File], "Shapefile",
+                "Shapefile contents to display", new KVP(Parameter.EXT, "shp"))) 
+        list.add(new Parameter("shape2", classOf[File], "Shapefile",
+                "Shapefile contents to display", new KVP(Parameter.EXT, "shp"))) 
                 
         val wizard:JParameterListWizard = new JParameterListWizard("Image Lab","Fill in the following layers", list)
         val finish = wizard.showModalDialog()
@@ -103,11 +103,11 @@ class MapPresentation {
             System.exit(0);
         }
         val imageFile:File =  wizard.getConnectionParameters().get("image").asInstanceOf[File]
-     //   val shapeFile1:File =  wizard.getConnectionParameters().get("shape1").asInstanceOf[File]
-       // val shapeFile2:File =  wizard.getConnectionParameters().get("shape2").asInstanceOf[File] 
+        val shapeFile1:File =  wizard.getConnectionParameters().get("shape1").asInstanceOf[File]
+        val shapeFile2:File =  wizard.getConnectionParameters().get("shape2").asInstanceOf[File] 
               
-     //   val  shapeList=List(shapeFile1,shapeFile2)
- val  shapeList=List()
+        val  shapeList=List(shapeFile1,shapeFile2)
+
        
         
         displayLayers(imageFile, shapeList);
@@ -212,9 +212,7 @@ class MapPresentation {
         // Set up a MapContent with the two layers
         val map:MapContent = new MapContent();
         map.setTitle("ImageLab");
-        import org.geotools.geometry._
-        import java.awt.geom.Point2D
-        var pts:List[List[DirectPosition2D]]=List()
+
         val rasterLayer:Layer = new GridReaderLayer(reader, rasterStyle);
         map.addLayer(rasterLayer);
         println(rasterLayer.getBounds)
@@ -229,57 +227,7 @@ class MapPresentation {
         import java.awt.event.{ComponentListener,ComponentEvent,ActionListener}
        
         import com.vividsolutions.jts.geom._
-        class curse extends CursorTool{  
-        }
-        
-                val ptBuilder:SimpleFeatureType=DataUtilities.createType("Observation",
-            "the_geom:Point:srid=4326,"+"dataType:String")//+"id:Int")
-        //val lnBuilder:SimpleFeatureType=DataUtilities.createType("Location",
-          //  "the_geom:LineString:srid=4326","type:String")
-        val newPT:DirectPosition2D=new DirectPosition2D()
-        val pointBuilder :SimpleFeatureBuilder=new SimpleFeatureBuilder(ptBuilder)
-              
-        //val lineBuilder :SimpleFeatureBuilder=new SimpleFeatureBuilder(lnBuilder)
-        val geometryFactory:GeometryFactory = JTSFactoryFinder.getGeometryFactory()
-       
-        def addObs(newPt:DirectPosition2D,dataType:String):SimpleFeature={
-          val point:Point=geometryFactory.createPoint(new Coordinate(newPt.getX, newPt.getY))
-          pointBuilder.add(point)
-          pointBuilder.add(dataType)
-          val feature:SimpleFeature=pointBuilder.buildFeature(null)
-          return feature
-        }
-        
-        
-        var feaList:List[SimpleFeature]=List()
-        frame.getMapPane().setCursorTool(
-              new curse {
-                var wall=false
-                var newPt:List[DirectPosition2D]=List()
-              override  def onMouseClicked(ev:MapMouseEvent){
-                  wall = false
-                  println("Mouse click at: " + ev.getWorldPos())
-                        newPt=List(ev.getWorldPos())
-                      
-                  val fea=addObs(ev.getWorldPos() ,"noneYet")   
-                  feaList=feaList:+fea
-                      println(pts)
-                      println(fea)
-                      
-                }
-       
-              override def onMouseDragged(ev:MapMouseEvent){
-                wall = true
-              }
-              
-              override def onMouseReleased(ev:MapMouseEvent){
-                      if(wall){newPt=newPt:+ ev.getWorldPos()
-                      pts=pts:+newPt
-                      println(pts)}
-              }
-              }
-        )
-
+      
         import javax.swing.{ButtonGroup,JRadioButtonMenuItem,AbstractButton,JToolBar,JButton }
         frame.setSize(800, 600);
         frame.enableStatusBar(true);
@@ -291,38 +239,14 @@ class MapPresentation {
         frame.enableLayerTable(true)
         val menuBar:JMenuBar = new JMenuBar();
         frame.setJMenuBar(menuBar);
-        val typeMenu:JMenu = new JMenu("Observation Type")
+       
         
 //a group of radio button menu items
-        var obsType="none"
+       
         
-        val group:ButtonGroup = new ButtonGroup();
-        val rbMenuItem1 = new JRadioButtonMenuItem("Wall");
-            rbMenuItem1.setSelected(true);
-            group.add(rbMenuItem1);
-            typeMenu.add(rbMenuItem1);
-
-        val rbMenuItem2 = new JRadioButtonMenuItem("Inside");
-            rbMenuItem2.setSelected(false);
-            group.add(rbMenuItem2);
-            typeMenu.add(rbMenuItem2);
-            
-        val rbMenuItem3 = new JRadioButtonMenuItem("OutSide");
-            rbMenuItem3.setSelected(false);
-            group.add(rbMenuItem3);
-            typeMenu.add(rbMenuItem3);
-            
-     val sliceActionListener: ActionListener = new ActionListener() {
-      def actionPerformed( actionEvent:ActionEvent){
-         val aButton:AbstractButton =  actionEvent.getSource().asInstanceOf[AbstractButton]
-         obsType=aButton.getText()
-        println("Selected: " + aButton.getText()+" " +obsType);
-      }
-    }
-        rbMenuItem1.addActionListener(sliceActionListener)
-        rbMenuItem2.addActionListener(sliceActionListener)
-        rbMenuItem3.addActionListener(sliceActionListener)
-        
+      
+   
+      
         val menu:JMenu = new JMenu("Raster");
         menuBar.add(menu);
         
@@ -345,16 +269,6 @@ class MapPresentation {
            }
         })
 
-            
- 
-        
-        
-        menuBar.add(typeMenu)
-        
-        
- 
-        // Finally display the map frame.
-        // When it is closed the app will exit.
         frame.setVisible(true);
         
       def  createGreyscaleStyle():Style= {
@@ -385,86 +299,3 @@ class MapPresentation {
      
 }
 
-////class for using wms
-//import java.net.URL;
-//import java.util.{List=>JList,Arrays};
-//
-//import javax.swing.JFrame;
-//import javax.swing.JOptionPane;
-//import org.geotools.data.wms._
-//import org.geotools.data.ows.{Layer=>wsLayer};
-//import org.geotools.data.wms.WebMapServer;
-//import org.geotools.map.MapContent;
-//import org.geotools.map.WMSLayer;
-//import org.geotools.swing.JMapFrame;
-//import org.geotools.swing.wms.WMSChooser;
-//import org.geotools.swing.wms.WMSLayerChooser;
-//
-///**
-// * This is a Web Map Server "quickstart" doing the minimum required to display
-// * something on screen.
-// */
-// class WMSLab extends JFrame {
-//    /**
-//     * Prompts the user for a wms service, connects, and asks for a layer and then
-//     * and displays its contents on the screen in a map frame.
-//     */
-//    
-//        // display a data store file chooser dialog for shapefiles
-//        def init{
-//        val server:JList[String]=Arrays.asList(
-////            "http://services.nationalmap.gov/arcgis/services/USGSTopoLarge/MapServer/WMSServer?request=GetCapabilities&service=WMS",
-////            "http://services.nationalmap.gov/arcgis/services/structures/MapServer/WMSServer?request=GetCapabilities&service=WMS",
-////            "http://services.nationalmap.gov/arcgis/services/transportation/MapServer/WMSServer?request=GetCapabilities&service=WMS",
-////            "http://raster.nationalmap.gov/arcgis/services/Orthoimagery/USGS_EROS_Ortho_NAIP/ImageServer/WMSServer?request=GetCapabilities&service=WMS"
-//        "http://webservices.nationalatlas.gov/wms/1million?SERVICE=WMS&REQUEST=GetCapabilities"  , 
-// "http://webservices.nationalatlas.gov/wms/agriculture?SERVICE=WMS&REQUEST=GetCapabilities",   
-//   "http://webservices.nationalatlas.gov/wms/biology?SERVICE=WMS&REQUEST=GetCapabilities",  
-// "http://webservices.nationalatlas.gov/wms/boundaries?SERVICE=WMS&REQUEST=GetCapabilities",   
-//   "http://webservices.nationalatlas.gov/wms/climate?SERVICE=WMS&REQUEST=GetCapabilities", 
-//"http://webservices.nationalatlas.gov/wms/environment?SERVICE=WMS&REQUEST=GetCapabilities",  
-//"http://webservices.nationalatlas.gov/wms/geology?SERVICE=WMS&REQUEST=GetCapabilities",   
-//"http://webservices.nationalatlas.gov/wms/government?SERVICE=WMS&REQUEST=GetCapabilities",   
-//"http://webservices.nationalatlas.gov/wms/history?SERVICE=WMS&REQUEST=GetCapabilities" , 
-//"http://webservices.nationalatlas.gov/wms/map_reference?SERVICE=WMS&REQUEST=GetCapabilities",  
-//"http://webservices.nationalatlas.gov/wms/people?SERVICE=WMS&REQUEST=GetCapabilities"  ,
-//"http://webservices.nationalatlas.gov/wms/transportation?SERVICE=WMS&REQUEST=GetCapabilities",   
-//"http://webservices.nationalatlas.gov/wms/water?SERVICE=WMS&REQUEST=GetCapabilities"   ,
-//"http://webservices.nationalatlas.gov/wms?SERVICE=WMS&REQUEST=GetCapabilities"
-//        )  
-//        val capabilitiesURL:URL = WMSChooser.showChooseWMS(
-//            server);
-//        if( capabilitiesURL == null ){
-//          println("err1")
-//            System.exit(0); // canceled
-//        }
-//        
-////       val testURL:URL=new URL("http://raster.nationalmap.gov/arcgis/services/Orthoimagery/USGS_EROS_Ortho_NAIP/ImageServer/WMSServer?request=GetCapabilities&service=WMS")
-////       val wms0=new WMS1_3_0.GetCapsRequest(testURL)
-////       val x=wms0.getFinalURL
-////       val wms:WebMapServer = new WebMapServer( x );        
-//        println("got capability")
-//        println(capabilitiesURL)
-//       val wms:WebMapServer = new WebMapServer( capabilitiesURL );
-//        println("got webserver")
-//        val wmsLayers:JList[wsLayer] = WMSLayerChooser.showSelectLayer( wms );
-//        println("got layers")
-//        if( wmsLayers == null ){
-//          println("err2")
-//            JOptionPane.showMessageDialog(null, "Could not connect - check url");
-//            System.exit(0);
-//        }
-//        val mapcontent:MapContent = new MapContent();
-//        mapcontent.setTitle( wms.getCapabilities().getService().getTitle() );
-//        println("map in")
-//        for( wmsLayer <-wmsLayers.toArray()  ){
-//            val displayLayer:WMSLayer = new WMSLayer(wms, wmsLayer.asInstanceOf[wsLayer] );
-//            mapcontent.addLayer(displayLayer);
-//            println("map added")
-//        }
-//        println("diplay")
-//        // Now display the map
-//        JMapFrame.showMap(mapcontent);
-//        println("display done")
-//        }
-//}

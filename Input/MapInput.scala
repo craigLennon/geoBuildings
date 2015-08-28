@@ -232,69 +232,95 @@ class MapInput {
         class curse extends CursorTool{  
         }
         
-                val ptBuilder:SimpleFeatureType=DataUtilities.createType("Observation",
+       val ptBuilder:SimpleFeatureType=DataUtilities.createType("Observation",
             "the_geom:Point:srid=4326,"+"dataType:String")//+"id:Int")
-        //val lnBuilder:SimpleFeatureType=DataUtilities.createType("Location",
-          //  "the_geom:LineString:srid=4326","type:String")
+        val lnBuilder:SimpleFeatureType=DataUtilities.createType("Location",
+            "the_geom:LineString:srid=4326," +"dataType:String")
         val newPT:DirectPosition2D=new DirectPosition2D()
         val pointBuilder :SimpleFeatureBuilder=new SimpleFeatureBuilder(ptBuilder)
               
-        //val lineBuilder :SimpleFeatureBuilder=new SimpleFeatureBuilder(lnBuilder)
+        val lineBuilder :SimpleFeatureBuilder=new SimpleFeatureBuilder(lnBuilder)
         val geometryFactory:GeometryFactory = JTSFactoryFinder.getGeometryFactory()
-       
-        def addObs(newPt:DirectPosition2D,dataType:String):SimpleFeature={
+        var obsType="none"
+        var ObservationPoints:List[SimpleFeature]=List()
+        var Walls:List[SimpleFeature]=List()
+        
+        def addWall(pts:List[DirectPosition2D],dataType:String,lnBuilder:SimpleFeatureBuilder):SimpleFeature={
+         println("in add wall")
+           println(pts)   
+           def mkPT(xy:DirectPosition2D):Coordinate={new Coordinate(xy.getX, xy.getY)}
+              val ac=pts.map(x=>mkPT(x))
+              val ls =geometryFactory.createLineString(ac.toArray)
+              println("inestring done")
+              lnBuilder.add(ls)
+              lnBuilder.add(dataType)
+              val feature:SimpleFeature=lnBuilder.buildFeature(null)
+              return feature              
+       }
+        
+        def addObs(newPt:DirectPosition2D,dataType:String,pointBuilder:SimpleFeatureBuilder):SimpleFeature={
+          println(newPt)
           val point:Point=geometryFactory.createPoint(new Coordinate(newPt.getX, newPt.getY))
           pointBuilder.add(point)
           pointBuilder.add(dataType)
           val feature:SimpleFeature=pointBuilder.buildFeature(null)
           return feature
-        }
-        
-        
-        var feaList:List[SimpleFeature]=List()
-        frame.getMapPane().setCursorTool(
-              new curse {
-                var wall=false
-                var newPt:List[DirectPosition2D]=List()
-              override  def onMouseClicked(ev:MapMouseEvent){
-                  wall = false
-                  println("Mouse click at: " + ev.getWorldPos())
-                        newPt=List(ev.getWorldPos())
-                      
-                  val fea=addObs(ev.getWorldPos() ,"noneYet")   
-                  feaList=feaList:+fea
-                      println(pts)
-                      println(fea)
-                      
-                }
-       
-              override def onMouseDragged(ev:MapMouseEvent){
-                wall = true
-              }
-              
-              override def onMouseReleased(ev:MapMouseEvent){
-                      if(wall){newPt=newPt:+ ev.getWorldPos()
-                      pts=pts:+newPt
-                      println(pts)}
-              }
-              }
-        )
-        /////building simple features
-        //you are here trying to build points and lines from input
-        //////////////////////////
-        
-        //insert button finish.  When pressed write to file then estimate
-        
-        
+        } 
 
         
         
-//        frame.addComponentListener(new ComponentListener(){}
-//              onMouseClicked    
-//        )
-//        val cur=new curse
-        //cur.onMouseClicked(ev)
-        import javax.swing.{ButtonGroup,JRadioButtonMenuItem,AbstractButton,JToolBar,JButton,JDialog }
+        
+        
+        
+import javax.swing.{ButtonGroup,JRadioButtonMenuItem,AbstractButton,JToolBar,JButton,JDialog }      
+ //building the interface
+        //establishing how data is recorded        
+        frame.getMapPane().setCursorTool(
+              new curse {
+              
+                var newPt:List[DirectPosition2D]=List()
+              override  def onMouseClicked(ev:MapMouseEvent){
+                  
+                  println(obsType)
+                  obsType match{
+                    case "none"=>println("no type selected")
+                    case "Inside"=>ObservationPoints=ObservationPoints:+addObs(ev.getWorldPos() ,obsType,pointBuilder)
+                    case "Outside"=>ObservationPoints=ObservationPoints:+addObs(ev.getWorldPos() ,obsType,pointBuilder)
+                    case "Wall"  =>//newPt=List(ev.getWorldPos())
+                    //println(newPt)
+                    case _ =>println("type error")
+                  }                     
+                }
+
+              override  def onMousePressed(ev:MapMouseEvent){
+                  
+                  println(obsType)
+                  obsType match{
+                    case "none"=>println("no type selected")
+                    case "Inside"=>//ObservationPoints=ObservationPoints:+addObs(ev.getWorldPos() ,obsType,pointBuilder)
+                    case "Outside"=>//ObservationPoints=ObservationPoints:+addObs(ev.getWorldPos() ,obsType,pointBuilder)
+                    case "Wall"  =>newPt=List(ev.getWorldPos())
+                    println(newPt)
+                    case _ =>println("type error")
+                  }                     
+                }
+                
+                
+              override def onMouseReleased(ev:MapMouseEvent){
+                obsType match{
+                    case "none"=>println("no type selected")
+                    case "Inside"=>()
+                    case "Outside"=>()
+                    case "Wall"  =>
+                      println("release")
+                      newPt=newPt:+ev.getWorldPos()
+                      println
+                      println(newPt)
+                      Walls=Walls:+addWall(newPt,obsType,lineBuilder)
+                    case _ =>println("type error")
+                  }
+              }})
+
         frame.setSize(800, 600);
         frame.enableStatusBar(true);
         frame.enableTool(JMapFrame.Tool.POINTER , JMapFrame.Tool.ZOOM, JMapFrame.Tool.PAN, JMapFrame.Tool.RESET);
@@ -311,15 +337,69 @@ class MapInput {
 //        d.setVisible(true);
   }
 })
+      def saveShape(features:List[SimpleFeature],name:String,builder:SimpleFeatureType){
+        val chooser:JFileDataStoreChooser = new JFileDataStoreChooser("shp");
+        chooser.setDialogTitle("Save "+name +" shapefile");
+        chooser.setSelectedFile(new File(name+".shp"));
+        val returnVal= chooser.showSaveDialog(null)
+        val newFile:File  = chooser.getSelectedFile()
+        println("in saved")
+        val dataStoreFactory:ShapefileDataStoreFactory = new ShapefileDataStoreFactory();
+
+        val  params:JMap[String, Serializable] = new HashMap[String, Serializable]
+        params.put("url", newFile.toURI().toURL());
+        params.put("create spatial index", true);
+        
+        
+        def saveFeature(params:JMap[String, Serializable],lnBuilder:SimpleFeatureType,
+            flist:List[SimpleFeature]){
+           val transaction:Transaction = new DefaultTransaction();
+           val newDataStore:ShapefileDataStore = dataStoreFactory.
+           createNewDataStore(params).asInstanceOf[ShapefileDataStore]
+            newDataStore.createSchema(lnBuilder)
+            val typeName:String = newDataStore.getTypeNames()(0)
+            val featureSource:SimpleFeatureSource = newDataStore.getFeatureSource(typeName)
+            val SHAPE_TYPE:SimpleFeatureType = featureSource.getSchema()
+                    if(featureSource.isInstanceOf[SimpleFeatureStore]) {
+             val featureStore:SimpleFeatureStore = featureSource.asInstanceOf[SimpleFeatureStore]
+            /*
+             * SimpleFeatureStore has a method to add features from a
+             * SimpleFeatureCollection object, so we use the ListFeatureCollection
+             * class to wrap our list of features.
+             */
+             val collection:SimpleFeatureCollection = new ListFeatureCollection(SHAPE_TYPE, flist.toArray);
+            featureStore.setTransaction(transaction);
+            try {
+                featureStore.addFeatures(collection);
+                transaction.commit();
+            } 
+            //catch (problem Exception) {
+              //  problem.printStackTrace();
+                //transaction.rollback();
+             finally {
+                transaction.close();
+            }
+         //   System.exit(0); // success!
+        } else {
+            System.out.println(typeName + " does not support read/write access");
+         //   System.exit(1);
+        }
+    }
+        ////here we are.  It saved one point.  did the rest not save, or were they not recorded?
+        //also we need to test saving several to the same file
+        saveFeature(params,builder,features)
+     
+     }
       val btnS:JButton = new JButton("Save Input")
         toolbar.addSeparator();
         toolbar.add(btnS)
         btnS.addActionListener(new ActionListener(){
                   def actionPerformed(e:ActionEvent){
-                  println("saved")
-
-  }
-})       
+                    println("saved")
+                    saveShape(ObservationPoints,"InOutPts",ptBuilder)
+                    saveShape(Walls,"wall",lnBuilder)
+                  }
+        })       
         
         frame.enableLayerTable(true)
         val menuBar:JMenuBar = new JMenuBar();
@@ -327,7 +407,7 @@ class MapInput {
         val typeMenu:JMenu = new JMenu("Observation Type")
         
 //a group of radio button menu items
-        var obsType="none"
+  
         
         val group:ButtonGroup = new ButtonGroup();
         val rbMenuItem1 = new JRadioButtonMenuItem("Wall");
@@ -340,7 +420,7 @@ class MapInput {
             group.add(rbMenuItem2);
             typeMenu.add(rbMenuItem2);
             
-        val rbMenuItem3 = new JRadioButtonMenuItem("OutSide");
+        val rbMenuItem3 = new JRadioButtonMenuItem("Outside");
             rbMenuItem3.setSelected(false);
             group.add(rbMenuItem3);
             typeMenu.add(rbMenuItem3);
@@ -349,7 +429,7 @@ class MapInput {
       def actionPerformed( actionEvent:ActionEvent){
          val aButton:AbstractButton =  actionEvent.getSource().asInstanceOf[AbstractButton]
          obsType=aButton.getText()
-        println("Selected: " + aButton.getText()+" " +obsType);
+        println("Selected: " +" " +obsType);
       }
     }
         rbMenuItem1.addActionListener(sliceActionListener)
@@ -357,7 +437,7 @@ class MapInput {
         rbMenuItem3.addActionListener(sliceActionListener)
         
         val menu:JMenu = new JMenu("Raster");
-        menuBar.add(menu);
+
         
         menu.add( new SafeAction("Grayscale display") {
             def action(e:ActionEvent){
@@ -377,18 +457,15 @@ class MapInput {
                 }
            }
         })
-
-            
- 
         
-        
+        //add menus
+        menuBar.add(menu);
         menuBar.add(typeMenu)
-        
-        
- 
-        // Finally display the map frame.
-        // When it is closed the app will exit.
         frame.setVisible(true);
+      //style function
+        
+   
+        
         
       def  createGreyscaleStyle():Style= {
         var cov:GridCoverage2D = null

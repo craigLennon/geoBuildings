@@ -1,11 +1,11 @@
 import Input._
-
+import Output._
 /**
  * @author cLennon
  */
 object testRaster extends App {
   val me=new MapInput
   me.execute
-  //val w=new WMSLab
-  //w.init
+// val mp=new MapPresentation
+// mp.execute
 }
