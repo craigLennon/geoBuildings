@@ -84,9 +84,11 @@ class MapInput {
        this.getLayersAndDisplay()
       }
       
-    
-      
-      private def getLayersAndDisplay(){
+     var rasterName:String=""
+     var shape1Name:String="" 
+     var shape2Name:String=""
+     
+        def getLayersAndDisplay(){
         val list:jList[Parameter[_]]=new ArrayList[Parameter[_]]
         list.add((new Parameter("image", classOf[File], "Image",
                 "GeoTiff or World+Image to display as basemap",
@@ -107,12 +109,13 @@ class MapInput {
        // val shapeFile2:File =  wizard.getConnectionParameters().get("shape2").asInstanceOf[File] 
               
      //   val  shapeList=List(shapeFile1,shapeFile2)
- val  shapeList=List()
-       
+       val  shapeList=List()
+       rasterName=imageFile.getAbsolutePath()
         
         displayLayers(imageFile, shapeList);
         
       }
+      
       
   def displayLayers( rasterFile:File,shpList:List[File]) {
         val format:AbstractGridFormat  = GridFormatFinder.findFormat( rasterFile );        
@@ -195,7 +198,9 @@ class MapInput {
 
         return SLD.wrapSymbolizers(sym);
     }
-        
+     
+     
+
         //end of helpers
 
         // Initially display the raster in greyscale using the
@@ -214,7 +219,7 @@ class MapInput {
         map.setTitle("ImageLab");
         import org.geotools.geometry._
         import java.awt.geom.Point2D
-        var pts:List[List[DirectPosition2D]]=List()
+       // var pts:List[List[DirectPosition2D]]=List()
         val rasterLayer:Layer = new GridReaderLayer(reader, rasterStyle);
         map.addLayer(rasterLayer);
         println(rasterLayer.getBounds)
@@ -223,6 +228,15 @@ class MapInput {
         map.addLayer(shpLayer);
         println(shpLayer.getBounds)}
         // Create a JMapFrame with a menu to choose the display style for the
+//       def addShapeLayer(fileName:String,color:java.awt.Color){
+//          val shapeFile:File  = new File("C:/Users/cLennon/Desktop/wallExp/"+fileName+".shp") 
+//          val dataStoreList:FileDataStore  =  FileDataStoreFinder.getDataStore(shapeFile)
+//          val shapefileSource =dataStoreList.getFeatureSource()
+//          val shpStyle:Style = SLD.createPolygonStyle(color, null, 0.0f);
+//          val shpLayer:Layer = new FeatureLayer(shapefileSource, shpStyle);
+//          map.addLayer(shpLayer);
+//        }
+        
         val frame = new JMapFrame(map);
         import org.geotools.swing.event.MapMouseEvent;
         import java.awt.event.ActionEvent;
@@ -274,7 +288,10 @@ class MapInput {
         
 import javax.swing.{ButtonGroup,JRadioButtonMenuItem,AbstractButton,JToolBar,JButton,JDialog }      
  //building the interface
-        //establishing how data is recorded        
+
+//        frame.getMapPane().setRenderer(s)
+//establishing how data is recorded     
+
         frame.getMapPane().setCursorTool(
               new curse {
               
@@ -284,7 +301,7 @@ import javax.swing.{ButtonGroup,JRadioButtonMenuItem,AbstractButton,JToolBar,JBu
                   println(obsType)
                   obsType match{
                     case "none"=>println("no type selected")
-                    case "Inside"=>ObservationPoints=ObservationPoints:+addObs(ev.getWorldPos() ,obsType,pointBuilder)
+                    case "Inside"=>  ObservationPoints=ObservationPoints:+addObs(ev.getWorldPos() ,obsType,pointBuilder)
                     case "Outside"=>ObservationPoints=ObservationPoints:+addObs(ev.getWorldPos() ,obsType,pointBuilder)
                     case "Wall"  =>//newPt=List(ev.getWorldPos())
                     //println(newPt)
@@ -337,12 +354,15 @@ import javax.swing.{ButtonGroup,JRadioButtonMenuItem,AbstractButton,JToolBar,JBu
 //        d.setVisible(true);
   }
 })
+
+
       def saveShape(features:List[SimpleFeature],name:String,builder:SimpleFeatureType){
-        val chooser:JFileDataStoreChooser = new JFileDataStoreChooser("shp");
-        chooser.setDialogTitle("Save "+name +" shapefile");
-        chooser.setSelectedFile(new File(name+".shp"));
-        val returnVal= chooser.showSaveDialog(null)
-        val newFile:File  = chooser.getSelectedFile()
+//        val chooser:JFileDataStoreChooser = new JFileDataStoreChooser("shp");
+//        chooser.setDialogTitle("Save "+name +" shapefile");
+//        chooser.setSelectedFile(new File(name+".shp"));
+//        val returnVal= chooser.showSaveDialog(null)
+
+        val newFile:File  = new File("C:/Users/cLennon/Desktop/wallExp/"+name+".shp")  //chooser.getSelectedFile()
         println("in saved")
         val dataStoreFactory:ShapefileDataStoreFactory = new ShapefileDataStoreFactory();
 
@@ -355,7 +375,7 @@ import javax.swing.{ButtonGroup,JRadioButtonMenuItem,AbstractButton,JToolBar,JBu
             flist:List[SimpleFeature]){
            val transaction:Transaction = new DefaultTransaction();
            val newDataStore:ShapefileDataStore = dataStoreFactory.
-           createNewDataStore(params).asInstanceOf[ShapefileDataStore]
+           createDataStore(params).asInstanceOf[ShapefileDataStore]
             newDataStore.createSchema(lnBuilder)
             val typeName:String = newDataStore.getTypeNames()(0)
             val featureSource:SimpleFeatureSource = newDataStore.getFeatureSource(typeName)
@@ -390,6 +410,9 @@ import javax.swing.{ButtonGroup,JRadioButtonMenuItem,AbstractButton,JToolBar,JBu
         saveFeature(params,builder,features)
      
      }
+     
+
+        
       val btnS:JButton = new JButton("Save Input")
         toolbar.addSeparator();
         toolbar.add(btnS)
@@ -398,6 +421,10 @@ import javax.swing.{ButtonGroup,JRadioButtonMenuItem,AbstractButton,JToolBar,JBu
                     println("saved")
                     saveShape(ObservationPoints,"InOutPts",ptBuilder)
                     saveShape(Walls,"wall",lnBuilder)
+                     shape1Name="C:/Users/cLennon/Desktop/wallExp/"+"InOutPts"+".shp"
+                     shape2Name="C:/Users/cLennon/Desktop/wallExp/"+"wall"+".shp"
+        val m = new MapUpdate(rasterName,shape1Name,shape2Name)
+                    m.execute
                   }
         })       
         
@@ -464,7 +491,7 @@ import javax.swing.{ButtonGroup,JRadioButtonMenuItem,AbstractButton,JToolBar,JBu
         frame.setVisible(true);
       //style function
         
-   
+ 
         
         
       def  createGreyscaleStyle():Style= {
