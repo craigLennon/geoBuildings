@@ -1,16 +1,21 @@
 package Input
 import java.awt.Color;
 import java.awt.event.ActionEvent;
-import java.io.File;
+import java.io.{File,Serializable=>JSerial}
 import java.io.IOException
 import scala.throws
 import java.util.ArrayList;
 import java.util.{List=>jList}
-
+import javax.swing.{ButtonGroup,JRadioButtonMenuItem,AbstractButton,JToolBar,JButton,JDialog }
+import org.geotools.geometry._
+import java.awt.geom.Point2D
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JOptionPane;
-
+import org.geotools.swing.event.MapMouseEvent;
+import java.awt.event.ActionEvent;
+import java.awt.event.{ComponentListener,ComponentEvent,ActionListener}     
+import com.vividsolutions.jts.geom._
 import org.geotools.coverage.GridSampleDimension;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.io.AbstractGridFormat;
@@ -81,40 +86,28 @@ class MapInput {
 
         
       def execute{
-       this.getLayersAndDisplay()
+       getLayersAndDisplay()
       }
       
-     var rasterName:String=""
-     var shape1Name:String="" 
-     var shape2Name:String=""
+     var rasterName:String=""  //record of file names for later display
+     var shapeObsName:String="" 
+     var shapeWallName:String=""
      
         def getLayersAndDisplay(){
         val list:jList[Parameter[_]]=new ArrayList[Parameter[_]]
         list.add((new Parameter("image", classOf[File], "Image",
                 "GeoTiff or World+Image to display as basemap",
                 new KVP( Parameter.EXT, "tif", Parameter.EXT, "jpg"))))
-      //  list.add(new Parameter("shape1", classOf[File], "Shapefile",
-       //         "Shapefile contents to display", new KVP(Parameter.EXT, "shp"))) 
-     //   list.add(new Parameter("shape2", classOf[File], "Shapefile",
-      //          "Shapefile contents to display", new KVP(Parameter.EXT, "shp"))) 
-                
         val wizard:JParameterListWizard = new JParameterListWizard("Image Lab","Fill in the following layers", list)
-        val finish = wizard.showModalDialog()
-                
+        val finish = wizard.showModalDialog()                
         if (finish != JWizard.FINISH) {
             System.exit(0);
         }
         val imageFile:File =  wizard.getConnectionParameters().get("image").asInstanceOf[File]
-     //   val shapeFile1:File =  wizard.getConnectionParameters().get("shape1").asInstanceOf[File]
-       // val shapeFile2:File =  wizard.getConnectionParameters().get("shape2").asInstanceOf[File] 
-              
-     //   val  shapeList=List(shapeFile1,shapeFile2)
-       val  shapeList=List()
-       rasterName=imageFile.getAbsolutePath()
-        
+        val  shapeList=List()
+        rasterName=imageFile.getAbsolutePath() 
         displayLayers(imageFile, shapeList);
-        
-      }
+      } //end of get layers and display
       
       
   def displayLayers( rasterFile:File,shpList:List[File]) {
@@ -125,13 +118,12 @@ class MapInput {
      def createGreyscaleStyle0(band:Int):Style= {
         val ce:ContrastEnhancement = sf.contrastEnhancement(ff.literal(1.0), ContrastMethod.NORMALIZE);
         val sct:SelectedChannelType = sf.createSelectedChannelType(String.valueOf(band), ce);
-
         val sym:RasterSymbolizer = sf.getDefaultRasterSymbolizer();
         val sel:ChannelSelection = sf.channelSelection(sct);
         sym.setChannelSelection(sel);
-
         return SLD.wrapSymbolizers(sym);
-    }
+    } //end create grey scale style
+     
      def createRGBStyle():Style= {
         var cov:GridCoverage2D = null
         try {
@@ -143,8 +135,7 @@ class MapInput {
         val numBands = cov.getNumSampleDimensions();
         if (numBands < 3) {
             return null;
-        }
-        // Get the names of the bands
+        } // Get the names of the bands
         val sampleDimensionNames = new  Array[String](numBands);
         var ind=0
         while(ind<numBands){
@@ -156,13 +147,8 @@ class MapInput {
           val GREEN = 1
           val BLUE = 2
         val channelNum = Array( -1, -1, -1 )
-        
-        // We examine the band names looking for "red...", "green...", "blue...".
-        // Note that the channel numbers we record are indexed from 1, not 0.
-       
         ind=0
-        while(ind<numBands){
-         
+        while(ind<numBands){   
             val name = sampleDimensionNames(ind).toLowerCase();
             if (name != null) {
                 if (name.matches("red.*")) {
@@ -197,52 +183,23 @@ class MapInput {
         sym.setChannelSelection(sel);
 
         return SLD.wrapSymbolizers(sym);
-    }
-     
-     
+    }  //end of create rbg style
 
-        //end of helpers
-
-        // Initially display the raster in greyscale using the
-        // data from the first image band
+     
+        // Initially display the raster in greyscale using the data from the first image band
         val rasterStyle:Style = createGreyscaleStyle0(1);
-
-        // Connect to the shapefile
-        val dataStoreList:List[FileDataStore] = shpList.map(x=> FileDataStoreFinder.getDataStore(x))
-        val shapefileSourceList:List[SimpleFeatureSource] =dataStoreList.map(dat=> dat.getFeatureSource())
-
-        // Create a basic style with yellow lines and no fill
-        val shpStyle:Style = SLD.createPolygonStyle(Color.YELLOW, null, 0.0f);
 
         // Set up a MapContent with the two layers
         val map:MapContent = new MapContent();
         map.setTitle("ImageLab");
-        import org.geotools.geometry._
-        import java.awt.geom.Point2D
+
        // var pts:List[List[DirectPosition2D]]=List()
         val rasterLayer:Layer = new GridReaderLayer(reader, rasterStyle);
         map.addLayer(rasterLayer);
         println(rasterLayer.getBounds)
-        for(shapefileSource<- shapefileSourceList){
-        val shpLayer:Layer = new FeatureLayer(shapefileSource, shpStyle);
-        map.addLayer(shpLayer);
-        println(shpLayer.getBounds)}
-        // Create a JMapFrame with a menu to choose the display style for the
-//       def addShapeLayer(fileName:String,color:java.awt.Color){
-//          val shapeFile:File  = new File("C:/Users/cLennon/Desktop/wallExp/"+fileName+".shp") 
-//          val dataStoreList:FileDataStore  =  FileDataStoreFinder.getDataStore(shapeFile)
-//          val shapefileSource =dataStoreList.getFeatureSource()
-//          val shpStyle:Style = SLD.createPolygonStyle(color, null, 0.0f);
-//          val shpLayer:Layer = new FeatureLayer(shapefileSource, shpStyle);
-//          map.addLayer(shpLayer);
-//        }
-        
+
         val frame = new JMapFrame(map);
-        import org.geotools.swing.event.MapMouseEvent;
-        import java.awt.event.ActionEvent;
-        import java.awt.event.{ComponentListener,ComponentEvent,ActionListener}
-       
-        import com.vividsolutions.jts.geom._
+
         class curse extends CursorTool{  
         }
         
@@ -258,7 +215,7 @@ class MapInput {
         var obsType="none"
         var ObservationPoints:List[SimpleFeature]=List()
         var Walls:List[SimpleFeature]=List()
-        
+        //functions for adding walls and observation points
         def addWall(pts:List[DirectPosition2D],dataType:String,lnBuilder:SimpleFeatureBuilder):SimpleFeature={
          println("in add wall")
            println(pts)   
@@ -281,12 +238,6 @@ class MapInput {
           return feature
         } 
 
-        
-        
-        
-        
-        
-import javax.swing.{ButtonGroup,JRadioButtonMenuItem,AbstractButton,JToolBar,JButton,JDialog }      
  //building the interface
 
 //        frame.getMapPane().setRenderer(s)
@@ -337,10 +288,10 @@ import javax.swing.{ButtonGroup,JRadioButtonMenuItem,AbstractButton,JToolBar,JBu
                     case _ =>println("type error")
                   }
               }})
-
-        frame.setSize(800, 600);
+ ///data entry is established.  now we build the rest or the frame
+        frame.setSize(1600, 900);
         frame.enableStatusBar(true);
-        frame.enableTool(JMapFrame.Tool.POINTER , JMapFrame.Tool.ZOOM, JMapFrame.Tool.PAN, JMapFrame.Tool.RESET);
+        //frame.enableTool(JMapFrame.Tool.POINTER , JMapFrame.Tool.ZOOM, JMapFrame.Tool.PAN, JMapFrame.Tool.RESET);
         frame.enableToolBar(true);
         val toolbar: JToolBar=frame.getToolBar
         val btnC:JButton = new JButton("Calculate")
@@ -349,9 +300,9 @@ import javax.swing.{ButtonGroup,JRadioButtonMenuItem,AbstractButton,JToolBar,JBu
         btnC.addActionListener(new ActionListener(){
                   def actionPerformed(e:ActionEvent){
                   println("calculating")
-//        val d: JDialog = new JDialog(frame, "Calculating", true);
-//        d.setLocationRelativeTo(frame);
-//        d.setVisible(true);
+                  val n = new interpret.Neighborhood
+                  n.loadObsPts(shapeObsName)
+                  n.loadWalls(shapeWallName)
   }
 })
 
@@ -366,12 +317,12 @@ import javax.swing.{ButtonGroup,JRadioButtonMenuItem,AbstractButton,JToolBar,JBu
         println("in saved")
         val dataStoreFactory:ShapefileDataStoreFactory = new ShapefileDataStoreFactory();
 
-        val  params:JMap[String, Serializable] = new HashMap[String, Serializable]
+        val  params:JMap[String, JSerial] = new HashMap[String, JSerial]
         params.put("url", newFile.toURI().toURL());
         params.put("create spatial index", true);
         
         
-        def saveFeature(params:JMap[String, Serializable],lnBuilder:SimpleFeatureType,
+        def saveFeature(params:JMap[String, JSerial],lnBuilder:SimpleFeatureType,
             flist:List[SimpleFeature]){
            val transaction:Transaction = new DefaultTransaction();
            val newDataStore:ShapefileDataStore = dataStoreFactory.
@@ -420,10 +371,10 @@ import javax.swing.{ButtonGroup,JRadioButtonMenuItem,AbstractButton,JToolBar,JBu
                   def actionPerformed(e:ActionEvent){
                     println("saved")
                     saveShape(ObservationPoints,"InOutPts",ptBuilder)
-                    saveShape(Walls,"wall",lnBuilder)
-                     shape1Name="C:/Users/cLennon/Desktop/wallExp/"+"InOutPts"+".shp"
-                     shape2Name="C:/Users/cLennon/Desktop/wallExp/"+"wall"+".shp"
-        val m = new MapUpdate(rasterName,shape1Name,shape2Name)
+                    saveShape(Walls,"Walls",lnBuilder)
+                     shapeObsName="C:/Users/cLennon/Desktop/wallExp/"+"InOutPts"+".shp"
+                     shapeWallName="C:/Users/cLennon/Desktop/wallExp/"+"Walls"+".shp"
+        val m = new MapUpdate(rasterName,shapeObsName,shapeWallName)
                     m.execute
                   }
         })       
