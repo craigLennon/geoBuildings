@@ -203,15 +203,20 @@ class MapInput {
         class curse extends CursorTool{  
         }
         
-       val ptBuilder:SimpleFeatureType=DataUtilities.createType("Observation",
+       val ptBuilder:SimpleFeatureType=DataUtilities.createType("ObsPt",
             "the_geom:Point:srid=4326,"+"dataType:String")//+"id:Int")
-        val lnBuilder:SimpleFeatureType=DataUtilities.createType("Location",
+        val lnBuilder:SimpleFeatureType=DataUtilities.createType("WallObs",
             "the_geom:LineString:srid=4326," +"dataType:String")
+        val pyBuilder:SimpleFeatureType=DataUtilities.createType("Inside",
+            "the_geom:Polygon:srid=4326," +"Building:String")    
+            
         val newPT:DirectPosition2D=new DirectPosition2D()
         val pointBuilder :SimpleFeatureBuilder=new SimpleFeatureBuilder(ptBuilder)
-              
         val lineBuilder :SimpleFeatureBuilder=new SimpleFeatureBuilder(lnBuilder)
+        val polyBuilder:SimpleFeatureBuilder=new SimpleFeatureBuilder(pyBuilder)
         val geometryFactory:GeometryFactory = JTSFactoryFinder.getGeometryFactory()
+
+        
         var obsType="none"
         var ObservationPoints:List[SimpleFeature]=List()
         var Walls:List[SimpleFeature]=List()
@@ -238,9 +243,13 @@ class MapInput {
           return feature
         } 
 
+        def convertInside(ins:Polygon,polyBuilder:SimpleFeatureBuilder):SimpleFeature={
+          polyBuilder.add(ins)
+          polyBuilder.add("Unknown")
+          val feature:SimpleFeature=polyBuilder.buildFeature(null)
+          return feature
+        }
  //building the interface
-
-//        frame.getMapPane().setRenderer(s)
 //establishing how data is recorded     
 
         frame.getMapPane().setCursorTool(
@@ -303,6 +312,14 @@ class MapInput {
                   val n = new interpret.Neighborhood
                   n.loadObsPts(shapeObsName)
                   n.loadWalls(shapeWallName)
+                  n.assignWalls
+                
+                  val insideList=n.reason
+                  val insideFea=insideList.map(py=>convertInside(py,polyBuilder))
+                   saveShape(insideFea,"WallsInsides",pyBuilder)
+                  var shapeInsidesName="C:/Users/cLennon/Desktop/wallExp/"+"WallsInsides"+".shp"
+                  val mFin = new MapUpdate(rasterName,shapeWallName,shapeInsidesName)
+                  mFin.execute
   }
 })
 
@@ -356,8 +373,7 @@ class MapInput {
          //   System.exit(1);
         }
     }
-        ////here we are.  It saved one point.  did the rest not save, or were they not recorded?
-        //also we need to test saving several to the same file
+
         saveFeature(params,builder,features)
      
      }
