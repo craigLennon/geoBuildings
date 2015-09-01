@@ -1,4 +1,5 @@
 package Input
+import Output._
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.io.{File,Serializable=>JSerial}
@@ -88,23 +89,24 @@ class MapInput {
       def execute{
        getLayersAndDisplay()
       }
-      
+ 
      var rasterName:String=""  //record of file names for later display
-     var shapeObsName:String="" 
-     var shapeWallName:String=""
+     var shapeObsName:String="C:/Users/cLennon/Desktop/wallExp/"+"InOutPts"+".shp" 
+     var shapeWallName:String="C:/Users/cLennon/Desktop/wallExp/"+"Walls"+".shp"
      
         def getLayersAndDisplay(){
-        val list:jList[Parameter[_]]=new ArrayList[Parameter[_]]
-        list.add((new Parameter("image", classOf[File], "Image",
-                "GeoTiff or World+Image to display as basemap",
-                new KVP( Parameter.EXT, "tif", Parameter.EXT, "jpg"))))
-        val wizard:JParameterListWizard = new JParameterListWizard("Image Lab","Fill in the following layers", list)
-        val finish = wizard.showModalDialog()                
-        if (finish != JWizard.FINISH) {
-            System.exit(0);
-        }
-        val imageFile:File =  wizard.getConnectionParameters().get("image").asInstanceOf[File]
-        val  shapeList=List()
+//        val list:jList[Parameter[_]]=new ArrayList[Parameter[_]]
+//        list.add((new Parameter("image", classOf[File], "Image",
+//                "GeoTiff or World+Image to display as basemap",
+//                new KVP( Parameter.EXT, "tif", Parameter.EXT, "jpg"))))
+//        val wizard:JParameterListWizard = new JParameterListWizard("Image Lab","Fill in the following layers", list)
+//        val finish = wizard.showModalDialog()                
+//        if (finish != JWizard.FINISH) {
+//            System.exit(0);
+//        }
+//        val imageFile:File =  wizard.getConnectionParameters().get("image").asInstanceOf[File]
+       val imageFile= new File("C:/Users/cLennon/Desktop/"+"a"+".tiff") 
+       val  shapeList=List()
         rasterName=imageFile.getAbsolutePath() 
         displayLayers(imageFile, shapeList);
       } //end of get layers and display
@@ -222,12 +224,12 @@ class MapInput {
         var Walls:List[SimpleFeature]=List()
         //functions for adding walls and observation points
         def addWall(pts:List[DirectPosition2D],dataType:String,lnBuilder:SimpleFeatureBuilder):SimpleFeature={
-         println("in add wall")
-           println(pts)   
+//         println("in add wall")
+//           println(pts)   
            def mkPT(xy:DirectPosition2D):Coordinate={new Coordinate(xy.getX, xy.getY)}
               val ac=pts.map(x=>mkPT(x))
               val ls =geometryFactory.createLineString(ac.toArray)
-              println("inestring done")
+//              println("inestring done")
               lnBuilder.add(ls)
               lnBuilder.add(dataType)
               val feature:SimpleFeature=lnBuilder.buildFeature(null)
@@ -235,7 +237,7 @@ class MapInput {
        }
         
         def addObs(newPt:DirectPosition2D,dataType:String,pointBuilder:SimpleFeatureBuilder):SimpleFeature={
-          println(newPt)
+//          println(newPt)
           val point:Point=geometryFactory.createPoint(new Coordinate(newPt.getX, newPt.getY))
           pointBuilder.add(point)
           pointBuilder.add(dataType)
@@ -243,9 +245,10 @@ class MapInput {
           return feature
         } 
 
-        def convertInside(ins:Polygon,polyBuilder:SimpleFeatureBuilder):SimpleFeature={
+        //change to add buildig
+        def convertInside(ins:Polygon,bldg:String,polyBuilder:SimpleFeatureBuilder):SimpleFeature={
           polyBuilder.add(ins)
-          polyBuilder.add("Unknown")
+          polyBuilder.add(bldg)
           val feature:SimpleFeature=polyBuilder.buildFeature(null)
           return feature
         }
@@ -315,10 +318,10 @@ class MapInput {
                   n.assignWalls
                 
                   val insideList=n.reason
-                  val insideFea=insideList.map(py=>convertInside(py,polyBuilder))
+                  val insideFea=insideList.map(py=>convertInside(py._1,py._2,polyBuilder))
                    saveShape(insideFea,"WallsInsides",pyBuilder)
                   var shapeInsidesName="C:/Users/cLennon/Desktop/wallExp/"+"WallsInsides"+".shp"
-                  val mFin = new MapUpdate(rasterName,shapeWallName,shapeInsidesName)
+                  val mFin = new MapUpdate3(rasterName,shapeWallName,shapeInsidesName,shapeObsName)
                   mFin.execute
   }
 })
@@ -390,7 +393,7 @@ class MapInput {
                     saveShape(Walls,"Walls",lnBuilder)
                      shapeObsName="C:/Users/cLennon/Desktop/wallExp/"+"InOutPts"+".shp"
                      shapeWallName="C:/Users/cLennon/Desktop/wallExp/"+"Walls"+".shp"
-        val m = new MapUpdate(rasterName,shapeObsName,shapeWallName)
+        val m = new MapUpdate2(rasterName,shapeObsName,shapeWallName)
                     m.execute
                   }
         })       

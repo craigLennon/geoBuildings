@@ -14,34 +14,26 @@ class Wall(ptList:LineString) {
     val g =new GeometryFactory 
     val lineStr=ptList
     var orientation:Element[Boolean]=Flip(.5)
-    var extent:Element[Double]= dUniform(0.01,0.1,0.3,0.5,0.75,1.0,1.5,2.0)
+    val distExt=List(0.01,0.1,0.3,0.5)
+    val prob=distExt
+    var extent:Element[Double]= Select(prob,distExt )
     var inner:Element[Polygon]=rInnerSide
-    
+    var building:Element[String]=dUniform("1","2","3","4","5","6","7","8","9","10")
     
     def this(ptList:List[Coordinate]){this(  (new GeometryFactory).createLineString(ptList.toArray))} 
     
-    def awtPointsLS:List[awtPoint]={
-      def cd2pt(c:Coordinate):awtPoint=new awtPoint(c.x.toInt,c.y.toInt)
-        val x=lineStr.getCoordinates()
-        x.map(y=>cd2pt(y)).toList
-    }
-        def awtPointsLR:List[awtPoint]={
-      def cd2pt(c:Coordinate):awtPoint=new awtPoint(c.x.toInt,c.y.toInt)
-        val x=lineStr.getCoordinates()
-        x.map(y=>cd2pt(y)).toList
-    }
-    
+  
    
    def rInnerSide:Element[Polygon]={   
-      println("made it to rInnerSide")
+    //  println("made it to rInnerSide")
       val in:Element[Polygon]=Apply(this.extent,this.orientation,(d:Double,b:Boolean)=> innerSide(d, b))
       return in
        }     
     
     def innerSide(d:Double,side:Boolean):Polygon={ //parameter is a proportion of the length 
-      println("made it to innerSide")
-      println(d)
-      println(side)
+    //  println("made it to innerSide")
+     // println(d)
+    //  println(side)
         val ext=d*lineStr.getLength
         val tmp=lineStr
         val st=lineStr.getStartPoint
@@ -73,7 +65,7 @@ class Wall(ptList:LineString) {
         box.apply(transBack)
         val ring= g.createLinearRing(box.getCoordinates)
         val poly=g.createPolygon(ring)
-        println(poly)
+       // println(poly)
         return poly
     }
 

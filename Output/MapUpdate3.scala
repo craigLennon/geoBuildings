@@ -1,4 +1,4 @@
-package Input
+package Output
 import java.awt.Color
 import java.awt.event.ActionEvent
 import java.io.File
@@ -42,7 +42,7 @@ import java.util.{List => jList}
 /**
  * @author cLennon
  */
-class MapUpdate2(rasterName:String,shape1:String,shape2:String) {
+class MapUpdate3(rasterName:String,shape1:String,shape2:String,shape3:String) {
       private val sf = CommonFactoryFinder.getStyleFactory();
       private val ff = CommonFactoryFinder.getFilterFactory2();
       val frame= new JMapFrame 
@@ -58,7 +58,8 @@ class MapUpdate2(rasterName:String,shape1:String,shape2:String) {
         val imageFile:File=new File(rasterName) 
         val shapeFile1:File=new File(shape1) 
         val shapeFile2:File=new File(shape2) 
-        val  shapeList=List(shapeFile1,shapeFile2)
+        val shapeFile3:File=new File(shape3)
+        val  shapeList=List(shapeFile1,shapeFile2,shapeFile3)
 
        
         
